@@ -6,14 +6,6 @@ loggedInUserID=$(id -u $loggedInUser)
 APP_PATH="/Library/Application Support/SplashBuddy/SplashBuddy.app"
 DONE_FILE="/var/db/.SplashBuddyDone"
 
-function getAssetNum() {
-  assetNum=$(launchctl asuser $loggedInUserID osascript -e 'display dialog "Enter Asset Tag #:" default answer "" giving up after 86400 with text buttons {"OK"} default button 1' -e 'return text returned of result')
-  until $assetNum; do
-  assetNum=$(launchctl asuser $loggedInUserID osascript -e 'display dialog "Invalid Asset Tag. Try again:" default answer "" giving up after 86400 with text buttons {"OK"} default button 1' -e 'return text returned of result')
-  done
-  confirm=$(launchctl asuser $loggedInUserID osascript -e 'display dialog "Confirm Asset Tag #:" default answer "" giving up after 86400 with text buttons {"Confirm"} default button 1' -e 'return text returned of result')
-}
-
 function appInstalled {
   codesign --verify "$APP_PATH" && return 0 || return 1
 }
@@ -34,12 +26,10 @@ if appNotRunning \
 
   sleep 3
 
-  # Rename machine to provided asset number
-  getAssetNum
-  until [ "$confirm" = "$assetNum" ]
-  do getAssetNum
-  done
+  # Get user-provided asset number
+  assetNum=$(launchctl asuser $loggedInUserID osascript -e 'display dialog "Enter Asset Tag #:" default answer "" with text buttons {"OK"} default button 1' -e 'return text returned of result')
 
+  # Rename machine to asset number
   scutil --set ComputerName "$assetNum"
   scutil --set LocalHostName "$assetNum"
   scutil --set LocalHostName ''
