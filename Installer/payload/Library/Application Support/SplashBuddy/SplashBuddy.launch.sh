@@ -7,11 +7,11 @@ APP_PATH="/Library/Application Support/SplashBuddy/SplashBuddy.app"
 DONE_FILE="/var/db/.SplashBuddyDone"
 
 function getAssetNum() {
-	assetNum=$(launchctl asuser $loggedInUserID osascript -e 'display dialog "Enter Asset Tag #:" default answer "" giving up after 86400 with text buttons {"OK"} default button 1' -e 'return text returned of result')
-	until $assetNum; do
-	assetNum=$(launchctl asuser $loggedInUserID osascript -e 'display dialog "Invalid Asset Tag. Try again:" default answer "" giving up after 86400 with text buttons {"OK"} default button 1' -e 'return text returned of result')
-	done
-	confirm=$(launchctl asuser $loggedInUserID osascript -e 'display dialog "Confirm Asset Tag #:" default answer "" giving up after 86400 with text buttons {"Confirm"} default button 1' -e 'return text returned of result')
+  assetNum=$(launchctl asuser $loggedInUserID osascript -e 'display dialog "Enter Asset Tag #:" default answer "" giving up after 86400 with text buttons {"OK"} default button 1' -e 'return text returned of result')
+  until $assetNum; do
+  assetNum=$(launchctl asuser $loggedInUserID osascript -e 'display dialog "Invalid Asset Tag. Try again:" default answer "" giving up after 86400 with text buttons {"OK"} default button 1' -e 'return text returned of result')
+  done
+  confirm=$(launchctl asuser $loggedInUserID osascript -e 'display dialog "Confirm Asset Tag #:" default answer "" giving up after 86400 with text buttons {"Confirm"} default button 1' -e 'return text returned of result')
 }
 
 function appInstalled {
@@ -27,43 +27,43 @@ function finderRunning {
 }
 
 if appNotRunning \
-	&& appInstalled \
-	&& [ "$loggedInUser" != "_mbsetupuser" ] \
-	&& finderRunning \
-	&& [ ! -f "$DONE_FILE" ]; then
+  && appInstalled \
+  && [ "$loggedInUser" != "_mbsetupuser" ] \
+  && finderRunning \
+  && [ ! -f "$DONE_FILE" ]; then
 
-	sleep 3
+  sleep 3
 
 ### Rename machine to provided asset number
-	getAssetNum
-	until [ "$confirm" = "$assetTag" ]
-	do getAssetNum
-	done
+  getAssetNum
+  until [ "$confirm" = "$assetNum" ]
+  do getAssetNum
+  done
 
-	scutil --set ComputerName "$assetNum"
-	scutil --set LocalHostName "$assetNum"
-	scutil --set LocalHostName ''
+  scutil --set ComputerName "$assetNum"
+  scutil --set LocalHostName "$assetNum"
+  scutil --set LocalHostName ''
 
 ### Bind using jamf policy
-	( /usr/local/bin/jamf policy -trigger bind ) & PID=$!
+  ( /usr/local/bin/jamf policy -trigger bind ) & PID=$!
 
 ### Launch SplashBuddy.app as console user
   launchctl asuser $loggedInUserID open -a "$APP_PATH"
 
 ### Wait until domain binding policy completes
-	while kill -0 $PID &> /dev/null
-	do sleep 0.1
-	done
+  while kill -0 $PID &> /dev/null
+  do sleep 0.1
+  done
 
-	/usr/local/bin/jamf policy -trigger SBLaunch
+  /usr/local/bin/jamf policy -trigger SBLaunch
 
 elif [ -f "$DONE_FILE" ]; then
 
-	launchctl bootout system/io.fti.SplashBuddy.launch
-	rm -rf /Library/Application\ Support/SplashBuddy
-	rm -f /Library/LaunchDaemons/io.fti.SplashBuddy.launch.plist
-	rm -f /Library/Preferences/io.fti.SplashBuddy.plist
-	rm -f "$DONE_FILE"
+  launchctl bootout system/io.fti.SplashBuddy.launch
+  rm -rf /Library/Application\ Support/SplashBuddy
+  rm -f /Library/LaunchDaemons/io.fti.SplashBuddy.launch.plist
+  rm -f /Library/Preferences/io.fti.SplashBuddy.plist
+  rm -f "$DONE_FILE"
 
 fi
 
