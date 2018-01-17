@@ -34,7 +34,7 @@ if appNotRunning \
 
   sleep 3
 
-### Rename machine to provided asset number
+  # Rename machine to provided asset number
   getAssetNum
   until [ "$confirm" = "$assetNum" ]
   do getAssetNum
@@ -44,17 +44,18 @@ if appNotRunning \
   scutil --set LocalHostName "$assetNum"
   scutil --set LocalHostName ''
 
-### Bind using jamf policy
+  # Bind using jamf policy
   ( /usr/local/bin/jamf policy -trigger bind ) & PID=$!
 
-### Launch SplashBuddy.app as console user
+  # Launch SplashBuddy.app as console user
   launchctl asuser $loggedInUserID open -a "$APP_PATH"
 
-### Wait until domain binding policy completes
+  # Wait until domain binding policy completes
   while kill -0 $PID &> /dev/null
   do sleep 0.1
   done
 
+  # Trigger the SplashBuddy install workflow
   /usr/local/bin/jamf policy -trigger SBLaunch
 
 elif [ -f "$DONE_FILE" ]; then
