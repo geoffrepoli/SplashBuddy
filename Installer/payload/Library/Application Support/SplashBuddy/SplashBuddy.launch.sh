@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 loggedInUser=$(/usr/bin/python -c 'from SystemConfiguration import SCDynamicStoreCopyConsoleUser; import sys; username = (SCDynamicStoreCopyConsoleUser(None, None, None) or [None])[0]; username = [username,""][username in [u"loginwindow", None, u""]]; sys.stdout.write(username + "\n");')
-loggedInUserID=$(id -u $loggedInUser)
 
 APP_PATH="/Library/Application Support/SplashBuddy/SplashBuddy.app"
 DONE_FILE="/var/db/.SplashBuddyDone"
@@ -24,29 +23,7 @@ if appNotRunning \
   && finderRunning \
   && [ ! -f "$DONE_FILE" ]; then
 
-  sleep 3
-
-  # Get user-provided asset number
-  assetNum=$(launchctl asuser $loggedInUserID osascript -e 'display dialog "Enter Asset Tag #:" default answer "" with text buttons {"OK"} default button 1' -e 'return text returned of result')
-
-  # Rename machine to asset number
-  scutil --set ComputerName "$assetNum"
-  scutil --set LocalHostName "$assetNum"
-  scutil --set LocalHostName ''
-
-  # Bind using jamf policy
-  ( /usr/local/bin/jamf policy -trigger bind ) & PID=$!
-
-  # Launch SplashBuddy.app as console user
-  launchctl asuser $loggedInUserID open -a "$APP_PATH"
-
-  # Wait until domain binding policy completes
-  while kill -0 $PID &> /dev/null
-  do sleep 0.1
-  done
-
-  # Trigger the SplashBuddy install workflow
-  /usr/local/bin/jamf policy -trigger SBLaunch
+  launchctl asuser $(id -u $loggedInUser) open -a "$APP_PATH"
 
 elif [ -f "$DONE_FILE" ]; then
 
